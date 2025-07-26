@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>🌤️ Advanced Weather App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body id="appBody">
+  <div style="display: flex; justify-content: flex-end; align-items: center; gap: 20px; margin: 15px 20px 0 0;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <label class="switch">
+        <input type="checkbox" id="themeToggle">
+        <span class="slider round"></span>
+      </label>
+      <span style="font-weight: 500; color: #000;">Theme</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <label class="switch">
+        <input type="checkbox" id="unitToggle">
+        <span class="slider round"></span>
+      </label>
+      <span id="unitLabel" style="color: #000; font-weight: 500;">°C</span>
+    </div>
+  </div>
+
+  <div id="weatherApp">
+  </div>
+
+  <div class="container">
+    <h1>🌍 Weather App</h1>
+    <div class="search-box">
+      <input id="cityInput" type="text" placeholder="Enter city name">
+      <button onclick="getWeather()">Search</button>
+    </div>
+
+    <div class="history" id="searchHistory"></div>
+
+    <div id="currentWeather" class="current-weather"></div>
+    <div id="map" class="map"></div>
+    <canvas id="tempChart" height="150" style="margin-top: 30px;"></canvas>
+    <div id="forecast" class="forecast"></div>
+    <div id="hourlyForecast" class="hourly-forecast"></div>
+    <div id="error" class="error"></div>
+  </div>
+
+  <script src="script.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+  window.onload = function () {
+    const toggle = document.getElementById('themeToggle');
+    const body = document.body;
+
+    toggle.addEventListener('change', () => {
+      body.classList.toggle('dark-mode');
+      localStorage.setItem('theme', body.classList.contains('dark-mode') ? 'dark' : 'light');
+    });
+
+    if (localStorage.getItem('theme') === 'dark') {
+      body.classList.add('dark-mode');
+      toggle.checked = true;
+    }
+
+    const unitToggle = document.getElementById("unitToggle");
+    const unitLabel = document.getElementById("unitLabel");
+    let unit = localStorage.getItem("unit") || "metric";
+    unitToggle.checked = unit === "imperial";
+    unitLabel.textContent = unit === "imperial" ? "°F" : "°C";
+    unitToggle.addEventListener("change", () => {
+      unit = unitToggle.checked ? "imperial" : "metric";
+      localStorage.setItem("unit", unit);
+      unitLabel.textContent = unit === "imperial" ? "°F" : "°C";
+      getWeather();
+    });
+  };
+  </script>  
+</body>
+</html>
