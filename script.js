@@ -13,7 +13,6 @@ unitToggle.addEventListener("change", () => {
   getWeather(); 
 });
 
-
 function updateBackground(condition) {
   const body = document.getElementById("appBody");
   if (condition.includes("rain")) {
@@ -86,8 +85,9 @@ async function getAQI(lat, lon) {
   `;
 }
 
-async function getWeather() {
-  const city = document.getElementById("cityInput").value.trim();
+async function getWeather(lat = null, lon = null) {
+  const cityInput = document.getElementById("cityInput");
+  const city = cityInput.value.trim();
   const currentDiv = document.getElementById("currentWeather");
   const forecastDiv = document.getElementById("forecast");
   const errorDiv = document.getElementById("error");
@@ -99,14 +99,21 @@ async function getWeather() {
   errorDiv.textContent = '';
   hourlyDiv.innerHTML = '';
 
-  if (!city) {
-    errorDiv.textContent = "Please enter a city name.";
-    return;
-  }
+  let currentResponse, forecastResponse;
 
   try {
-    const currentResponse = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&units=${unit}&appid=${API_KEY}`);
-const forecastResponse = await fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=${unit}&appid=${API_KEY}`); 
+    if (lat && lon) {
+      currentResponse = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=${unit}&appid=${API_KEY}`);
+      forecastResponse = await fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=${unit}&appid=${API_KEY}`);
+    } else {
+      if (!city) {
+        errorDiv.textContent = "Please enter a city name.";
+        return;
+      }
+      currentResponse = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&units=${unit}&appid=${API_KEY}`);
+      forecastResponse = await fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=${unit}&appid=${API_KEY}`); 
+    }
+
     const currentData = await currentResponse.json();
     const forecastData = await forecastResponse.json();
 
@@ -133,8 +140,9 @@ const forecastResponse = await fetch(`https://api.openweathermap.org/data/2.5/fo
       <p>🔽 Pressure: ${main.pressure} hPa</p>
       ${aqiHtml}
       <p>🌅 Sunrise: ${new Date(sys.sunrise * 1000).toLocaleTimeString()}</p>
-<p>🌇 Sunset: ${new Date(sys.sunset * 1000).toLocaleTimeString()}</p>
+      <p>🌇 Sunset: ${new Date(sys.sunset * 1000).toLocaleTimeString()}</p>
     `;
+
     const dailyForecast = {};
     forecastData.list.forEach(item => {
       const date = item.dt_txt.split(' ')[0];
@@ -161,7 +169,7 @@ const forecastResponse = await fetch(`https://api.openweathermap.org/data/2.5/fo
           <h4>${day}</h4>
           <img src="https://openweathermap.org/img/wn/${icon}.png" alt="">
           <p>${desc}</p>
-         <p>${temp}°${unit === "imperial" ? "F" : "C"}</p>
+          <p>${temp}°${unit === "imperial" ? "F" : "C"}</p>
         </div>
       `;
     }
@@ -228,4 +236,57 @@ const forecastResponse = await fetch(`https://api.openweathermap.org/data/2.5/fo
   }
 }
 
-showHistory();
+window.addEventListener("load", () => {
+  showHistory();
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      position => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        getWeather(lat, lon);
+      },
+      () => {
+        console.warn("Location access denied. Defaulting to manual input.");
+      }
+    );
+  } else {
+    console.warn("Geolocation not supported.");
+  }
+});
+async function getWeatherByLocation() {
+  if (!navigator.geolocation) {
+    alert("Geolocation is not supported by your browser.");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(async position => {
+    const lat = position.coords.latitude;
+    const lon = position.coords.longitude;
+
+    const currentDiv = document.getElementById("currentWeather");
+    const forecastDiv = document.getElementById("forecast");
+    const errorDiv = document.getElementById("error");
+    const hourlyDiv = document.getElementById("hourlyForecast");
+    const chartCanvas = document.getElementById("tempChart");
+
+    currentDiv.innerHTML = '';
+    forecastDiv.innerHTML = '';
+    errorDiv.textContent = '';
+    hourlyDiv.innerHTML = '';
+
+    try {
+      const currentResponse = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=${unit}&appid=${API_KEY}`);
+      const forecastResponse = await fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=${unit}&appid=${API_KEY}`);
+      const currentData = await currentResponse.json();
+      const forecastData = await forecastResponse.json();
+
+      document.getElementById("cityInput").value = currentData.name;
+      getWeather(); // use city name logic
+    } catch (error) {
+      errorDiv.textContent = "Failed to fetch location weather.";
+      console.error(error);
+    }
+  }, () => {
+    alert("Unable to retrieve your location.");
+  });
+}

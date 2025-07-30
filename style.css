@@ -338,4 +338,7 @@ body.dark-mode .history button {
 body.dark-mode .history button:hover {
   background: rgba(255, 255, 255, 0.2);
 }
+.search-box button {
+  margin-top: 5px;
+}
 
