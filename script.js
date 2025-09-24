@@ -290,3 +290,4 @@ async function getWeatherByLocation() {
     alert("Unable to retrieve your location.");
   });
 }
+
